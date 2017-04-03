@@ -27,4 +27,4 @@ scrape_configs:
       - targets: ['localhost:9090']
   - job_name: 'scale'
     static_configs:
-      - targets: ['192.168.1.6:8005']
+      - targets: ['192.168.1.19:8005']

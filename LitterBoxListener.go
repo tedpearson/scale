@@ -3,10 +3,11 @@ package main
 import "log"
 
 type LitterBoxListener struct {
-	in         chan float64
-	out        chan LitterBoxEvent
-	lastWeight float64
-	state      LitterBoxState
+	in               chan float64
+	out              chan LitterBoxEvent
+	lastWeight       float64
+	catInitialWeight float64
+	state            LitterBoxState
 }
 
 type WeightRange struct {
@@ -66,6 +67,7 @@ func StartLitterBoxListener(in chan float64) chan LitterBoxEvent {
 		in,
 		out,
 		0,
+		0,
 		InitState,
 	}.run()
 	return out
@@ -94,6 +96,7 @@ func (l LitterBoxListener) run() {
 				lType = CatOnType
 				lState = WithCatState
 				litterWeight = l.lastWeight
+				l.catInitialWeight = -weightChange
 			} else if scoopWeight.inRange(weightChange) {
 				lType = ScoopedType
 				lState = NormalState
@@ -114,6 +117,10 @@ func (l LitterBoxListener) run() {
 				lType = CatOffType
 				lState = NormalState
 				catWent.Inc()
+				currentCatWeight.Set(-weightChange)
+				if l.catInitialWeight > -weightChange {
+					catExcrement.Add(l.catInitialWeight + weightChange)
+				}
 			} else {
 				log.Println("Unrecognized event while cat on litter box")
 			}

@@ -1,5 +1,14 @@
 package main
 
+/*
+	setup
+	docker run -i -p 3000:3000 grafana/grafana
+	import dashboard
+	modify prometheus.yaml to point to current ip (docker localhost is container-only)
+	docker run -p 9090:9090 -v $PWD/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+	run scale
+ */
+
 import (
 	"github.com/GeertJohan/go.hid"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,6 +30,14 @@ var (
 		Name: "cat_went",
 		Help: "Cat used the litter box",
 	})
+	currentCatWeight = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "cat_weight",
+		Help: "Last recorded cat weight in pounds",
+	})
+	catExcrement = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "cat_excrement",
+		Help: "Amount of exrement left over time in pounds",
+	})
 	scoops = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "scoops",
 		Help: "The litter box was scooped",
@@ -39,17 +56,15 @@ var (
 	})
 	currentWeight = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "current_weight",
-		Help: "The current weight of the litter box with contents",
+		Help: "The current weight of the litter box with contents in pounds",
 	})
 )
 
 func main() {
-	prometheus.MustRegister(catWent, scoops, emptied, refilled, litterAdd, currentWeight)
-	println("hello")
+	println("Starting....")
+	prometheus.MustRegister(catWent, currentCatWeight, catExcrement, scoops, emptied, refilled, litterAdd, currentWeight)
 	http.Handle("/metrics", promhttp.Handler())
-	println("test")
 	go http.ListenAndServe(":8005", nil)
-	println("YO")
 	weightEvents := StartWeightListener()
 	stableEvents := StartStableWeightListener(weightEvents, 3*time.Second)
 	litterBoxEvents := StartLitterBoxListener(stableEvents)

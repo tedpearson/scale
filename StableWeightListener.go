@@ -1,8 +1,8 @@
 package main
 
-import "time"
 import (
 	"github.com/eapache/queue"
+	"time"
 )
 
 type StableWeightListener struct {
